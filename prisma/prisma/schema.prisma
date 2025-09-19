@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  googleId      String?   @unique
+  avatar        String?
+  role          String    @default("USER")
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime?
+
+  projects      Project[]
+  transcriptions Transcription[]
+
+  @@map("users")
+}
+
+model Client {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  email       String?
+  phone       String?
+  company     String?
+  notes       String?
+  
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  projects    Project[]
+
+  @@map("clients")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  year        Int       @default(2024)
+  
+  clientId    String
+  userId      String
+  
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client        Client @relation(fields: [clientId], references: [id])
+  user          User @relation(fields: [userId], references: [id])
+  transcriptions Transcription[]
+
+  @@map("projects")
+}
+
+model Transcription {
+  id                String    @id @default(cuid())
+  
+  originalFileName  String
+  fileSize          String
+  fileDuration      Int?
+  fileFormat        String
+  mimeType          String?
+  
+  language          String    @default("pt-BR")
+  modelUsed         String    @default("whisper-1")
+  
+  status            String    @default("PENDING")
+  progress          Int       @default(0)
+  errorMessage      String?
+  
+  speakersCount     Int?
+  confidence        Float?
+  wordCount         Int?
+  
+  transcriptText    String?
+  googleDriveFolder String?
+  docxFileId        String?
+  pdfFileId         String?
+  docxFileUrl       String?
+  pdfFileUrl        String?
+  
+  projectId         String
+  userId            String
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+  
+  project           Project @relation(fields: [projectId], references: [id])
+  user              User @relation(fields: [userId], references: [id])
+  speakers          Speaker[]
+  segments          TranscriptionSegment[]
+
+  @@map("transcriptions")
+}
+
+model Speaker {
+  id              String  @id @default(cuid())
+  transcriptionId String
+  
+  speakerLabel    String
+  customName      String?
+  confidence      Float?
+  
+  totalDuration   Int?
+  segmentsCount   Int?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  transcription   Transcription @relation(fields: [transcriptionId], references: [id], onDelete: Cascade)
+  segments        TranscriptionSegment[]
+
+  @@map("speakers")
+}
+
+model TranscriptionSegment {
+  id              String  @id @default(cuid())
+  transcriptionId String
+  speakerId       String
+  
+  startTime       Float
+  endTime         Float
+  duration        Float
+  
+  text            String
+  confidence      Float?
+  wordCount       Int?
+  
+  sequence        Int
+  
+  createdAt       DateTime @default(now())
+  
+  transcription   Transcription @relation(fields: [transcriptionId], references: [id], onDelete: Cascade)
+  speaker         Speaker @relation(fields: [speakerId], references: [id], onDelete: Cascade)
+
+  @@map("transcription_segments")
+}
