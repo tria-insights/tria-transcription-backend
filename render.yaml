@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: tria-transcription-api
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: <sua-string-de-conexão>
