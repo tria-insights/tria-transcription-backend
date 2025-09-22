@@ -88,3 +88,7 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
+const transcriptionRoutes = require('./src/routes/transcription');
+
+// E depois adicione a rota:
+app.use('/api/transcription', transcriptionRoutes);
