@@ -8,9 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false
-}));
+app.use(helmet({ crossOriginEmbedderPolicy: false }));
 app.use(cors({
   origin: '*',
   credentials: true
@@ -18,7 +16,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory
 const fs = require('fs');
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -28,13 +26,27 @@ if (!fs.existsSync(uploadsDir)) {
 // Static files
 app.use('/uploads', express.static(uploadsDir));
 
-// Health check route
+// ROTA RAIZ - Para evitar erro 404
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: "TRIA Transcription API - Sistema de Transcrição Inteligente",
+    version: "1.0.0",
+    endpoints: {
+      health: "/health",
+      test: "/api/test",
+      transcription: "/api/transcription"
+    }
+  });
+});
+
+// Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'TRIA Transcription API is running',
+  res.json({
+    status: "OK",
+    message: "TRIA Transcription API is running",
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: "1.0.0"
   });
 });
 
@@ -42,30 +54,21 @@ app.get('/health', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({
     success: true,
-    message: 'API está funcionando!',
+    message: "API está funcionando!",
     openai_configured: !!process.env.OPENAI_API_KEY,
     database_url: !!process.env.DATABASE_URL
   });
 });
 
-// Basic transcription endpoint (mock for now)
-app.post('/api/transcription/create', (req, res) => {
-  console.log('Recebido pedido de transcrição:', req.body);
-  
-  res.json({
-    success: true,
-    message: 'Transcrição iniciada (modo teste)',
-    transcriptionId: 'test-' + Date.now(),
-    status: 'PROCESSING'
-  });
-});
+// Transcription routes
+app.use('/api/transcription', require('./src/routes/transcription'));
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Erro:', err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     success: false,
-    error: 'Algo deu errado!',
+    error: "Algo deu errado!",
     details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
@@ -74,7 +77,7 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Rota não encontrada',
+    error: "Rota não encontrada",
     requested_path: req.originalUrl
   });
 });
@@ -88,7 +91,3 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
-const transcriptionRoutes = require('./src/routes/transcription');
-
-// E depois adicione a rota:
-app.use('/api/transcription', transcriptionRoutes);
