@@ -91,3 +91,32 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
+
+// No server.js, adicione este endpoint:
+app.get('/api/transcription/status/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Simular busca no banco - você vai conectar com Prisma depois
+    const transcription = {
+      id,
+      status: 'COMPLETED', // PENDING, PROCESSING, COMPLETED, ERROR
+      progress: 100,
+      result: "# Transcrição Completa...", // Markdown da transcrição
+      documents: {
+        docx: `/uploads/${id}.docx`,
+        pdf: `/uploads/${id}.pdf`
+      },
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString()
+    };
+    
+    res.json(transcription);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar status',
+      details: error.message
+    });
+  }
+});
